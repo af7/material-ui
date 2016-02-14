@@ -1,10 +1,9 @@
-module.exports = {
+export default {
 
   easeOutFunction: 'cubic-bezier(0.23, 1, 0.32, 1)',
   easeInOutFunction: 'cubic-bezier(0.445, 0.05, 0.55, 0.95)',
 
   easeOut(duration, property, delay, easeFunction) {
-
     easeFunction = easeFunction || this.easeOutFunction;
 
     if (property &&
@@ -15,13 +14,11 @@ module.exports = {
         if (transitions) transitions += ',';
         transitions += this.create(duration, property[i], delay, easeFunction);
       }
-      return transitions;
 
-    }
-    else {
+      return transitions;
+    } else {
       return this.create(duration, property, delay, easeFunction);
     }
-
   },
 
   create(duration, property, delay, easeFunction) {
@@ -30,9 +27,6 @@ module.exports = {
     delay = delay || '0ms';
     easeFunction = easeFunction || 'linear';
 
-    return property + ' ' +
-      duration + ' ' +
-      easeFunction + ' ' +
-      delay;
+    return `${property} ${duration} ${easeFunction} ${delay}`;
   },
 };

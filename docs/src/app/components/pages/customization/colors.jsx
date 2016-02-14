@@ -1,23 +1,28 @@
 import React from 'react';
-import {ClearFix, Mixins, Styles, Utils} from 'material-ui';
+import Title from 'react-title-component';
+
+import {
+  ClearFix,
+  Mixins,
+  Styles,
+  Utils,
+} from 'material-ui';
 
 const {ColorManipulator} = Utils;
-const {StyleResizable, StylePropable} = Mixins;
+const {StyleResizable} = Mixins;
 const {Colors, Typography} = Styles;
-
 
 const ColorsPage = React.createClass({
 
-  mixins: [StyleResizable, StylePropable],
+  mixins: [
+    StyleResizable,
+  ],
 
   getStyles() {
-    let styles = {
-      root: {
-        //null
-      },
+    const styles = {
       name: {
         display: 'block',
-        marginBottom: '60px',
+        marginBottom: 60,
       },
       hex: {
         float: 'right',
@@ -26,14 +31,13 @@ const ColorsPage = React.createClass({
         float: 'left',
         padding: '16px 0',
         display: 'block',
-        margin: '0',
+        margin: 0,
       },
       headline: {
-        //mui-font-style-headline
-        fontSize: '24px',
+        fontSize: 24,
         lineHeight: '32px',
-        paddingTop: '16px',
-        marginBottom: '12px',
+        paddingTop: 16,
+        marginBottom: 12,
         letterSpacing: '0',
         fontWeight: Typography.fontWeightNormal,
         color: Typography.textDarkBlack,
@@ -50,62 +54,22 @@ const ColorsPage = React.createClass({
     };
 
     if (this.isDeviceSize(StyleResizable.statics.Sizes.LARGE)) {
-      styles.colorGroup = this.mergeStyles(styles.colorGroup, styles.colorGroupWhenLarge);
+      styles.colorGroup = Object.assign(styles.colorGroup, styles.colorGroupWhenLarge);
     } else if (this.isDeviceSize(StyleResizable.statics.Sizes.MEDIUM)) {
-      styles.colorGroup = this.mergeStyles(styles.colorGroup, styles.colorGroupWhenMedium);
+      styles.colorGroup = Object.assign(styles.colorGroup, styles.colorGroupWhenMedium);
     } else {
-      styles.colorGroup = this.mergeStyles(styles.colorGroup, styles.colorGroupWhenSmall);
+      styles.colorGroup = Object.assign(styles.colorGroup, styles.colorGroupWhenSmall);
     }
 
     return styles;
   },
 
-  render() {
-    let mainColors = [
-        'Red', 'Pink', 'Purple', 'Deep Purple', 'Indigo', 'Blue', 'Light Blue',
-        'Cyan', 'Teal', 'Green', 'Light Green', 'Lime', 'Yellow', 'Amber', 'Orange', 'Deep Orange',
-      ],
-      neutralColors = ['Brown', 'Blue Grey', 'Grey'],
-      colorGroups = [],
-      neutralGroups = [];
-
-    mainColors.forEach((color) => {
-      colorGroups.push(this._getColorGroup(color, true));
-    }, this);
-
-    neutralColors.forEach((color) => {
-      neutralGroups.push(this._getColorGroup(color, false));
-    }, this);
-
-    let googleLink = 'https://www.google.com/design/spec/style/color.html#color-ui-color-palette';
-    let githubLink = 'https://github.com/callemall/material-ui/blob/master/src/styles/colors.js';
-
-    return (
-      <div>
-        <h2 style={this.getStyles().headline}>UI Color Palette</h2>
-        <p>
-          We&#39;ve created javascript variables for every color used in
-          the <a href={googleLink}>UI Color Palette</a>. They are stored
-          in <a href={githubLink}>styles/colors.js</a>.
-        </p>
-
-        <ClearFix>
-          {colorGroups}
-
-          <div>
-            {neutralGroups}
-          </div>
-        </ClearFix>
-      </div>
-    );
-  },
-
   _getColorGroup(color, showAltPalette) {
-    let mainPalette = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
-    let altPalette = ['A100', 'A200', 'A400', 'A700'];
-    let cssColor = color.replace(' ', '').replace(color.charAt(0), color.charAt(0).toLowerCase());
-    let colors = [];
-    let colorGroupStyle = this.getStyles().colorGroup;
+    const mainPalette = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
+    const altPalette = ['A100', 'A200', 'A400', 'A700'];
+    const cssColor = color.replace(' ', '').replace(color.charAt(0), color.charAt(0).toLowerCase());
+    const colors = [];
+    const colorGroupStyle = this.getStyles().colorGroup;
 
     mainPalette.forEach((mainValue) => {
       colors.push(this._getColorBlock(cssColor, mainValue));
@@ -126,20 +90,20 @@ const ColorsPage = React.createClass({
   },
 
   _getColorBlock(colorName, colorValue, colorTitle) {
-    let bgColorText = colorName + colorValue;
-    let bgColor = Colors[bgColorText];
+    const bgColorText = colorName + colorValue;
+    const bgColor = Colors[bgColorText];
     let fgColor = Colors.fullBlack;
-    let contrastRatio = ColorManipulator.contrastRatio(bgColor, fgColor);
+    const contrastRatio = ColorManipulator.contrastRatio(bgColor, fgColor);
     let blockTitle;
 
     if (contrastRatio < 7) fgColor = Colors.fullWhite;
     if (colorTitle) blockTitle = <span style={this.getStyles().name}>{colorTitle}</span>;
 
-    let styles = {
+    const styles = {
       backgroundColor: bgColor,
       color: fgColor,
       listStyle: 'none',
-      padding: '15px',
+      padding: 15,
     };
 
     return (
@@ -150,6 +114,47 @@ const ColorsPage = React.createClass({
     );
   },
 
+  render() {
+    const mainColors = [
+      'Red', 'Pink', 'Purple', 'Deep Purple', 'Indigo', 'Blue', 'Light Blue',
+      'Cyan', 'Teal', 'Green', 'Light Green', 'Lime', 'Yellow', 'Amber', 'Orange', 'Deep Orange',
+    ];
+    const neutralColors = ['Brown', 'Blue Grey', 'Grey'];
+    const colorGroups = [];
+    const neutralGroups = [];
+
+    mainColors.forEach((color) => {
+      colorGroups.push(this._getColorGroup(color, true));
+    }, this);
+
+    neutralColors.forEach((color) => {
+      neutralGroups.push(this._getColorGroup(color, false));
+    }, this);
+
+    const googleLink = 'https://www.google.com/design/spec/style/color.html#color-ui-color-palette';
+    const githubLink = 'https://github.com/callemall/material-ui/blob/master/src/styles/colors.js';
+
+    return (
+      <div>
+        <Title render={(previousTitle) => `Colors - ${previousTitle}`} />
+        <h2 style={this.getStyles().headline}>UI Color Palette</h2>
+        <p>
+          We&#39;ve created javascript variables for every color used in
+          the <a href={googleLink}>UI Color Palette</a>. They are stored
+          in <a href={githubLink}>styles/colors.js</a>.
+        </p>
+
+        <ClearFix>
+          {colorGroups}
+
+          <div>
+            {neutralGroups}
+          </div>
+        </ClearFix>
+      </div>
+    );
+  },
+
 });
 
-module.exports = ColorsPage;
+export default ColorsPage;

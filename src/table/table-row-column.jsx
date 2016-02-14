@@ -1,23 +1,84 @@
-const React = require('react');
-const StylePropable = require('../mixins/style-propable');
-const DefaultRawTheme = require('../styles/raw-themes/light-raw-theme');
-const ThemeManager = require('../styles/theme-manager');
+import React from 'react';
+import getMuiTheme from '../styles/getMuiTheme';
+
+function getStyles(props, state) {
+  const {
+    tableRowColumn,
+  } = state.muiTheme;
+
+  const styles = {
+    root: {
+      paddingLeft: tableRowColumn.spacing,
+      paddingRight: tableRowColumn.spacing,
+      height: tableRowColumn.height,
+      textAlign: 'left',
+      fontSize: 13,
+      overflow: 'hidden',
+      whiteSpace: 'nowrap',
+      textOverflow: 'ellipsis',
+    },
+  };
+
+  if (React.Children.count(props.children) === 1 && !isNaN(props.children)) {
+    styles.textAlign = 'right';
+  }
+
+  return styles;
+}
 
 const TableRowColumn = React.createClass({
 
-  mixins: [StylePropable],
+  propTypes: {
+    children: React.PropTypes.node,
+
+    /**
+     * The css class name of the root element.
+     */
+    className: React.PropTypes.string,
+
+    /**
+     * Number to identify the header row. This property
+     * is automatically populated when used with TableHeader.
+     */
+    columnNumber: React.PropTypes.number,
+
+    /**
+     * If true, this column responds to hover events.
+     */
+    hoverable: React.PropTypes.bool,
+
+    /**
+     * Key for this element.
+     */
+    key: React.PropTypes.string,
+
+    /**
+     * Callback function for click event.
+     */
+    onClick: React.PropTypes.func,
+
+    /**
+     * Callback function for hover event.
+     */
+    onHover: React.PropTypes.func,
+
+    /**
+     * Callback function for hover exit event.
+     */
+    onHoverExit: React.PropTypes.func,
+
+    /**
+     * Override the inline-styles of the root element.
+     */
+    style: React.PropTypes.object,
+  },
 
   contextTypes: {
     muiTheme: React.PropTypes.object,
   },
 
-  propTypes: {
-    columnNumber: React.PropTypes.number,
-    hoverable: React.PropTypes.bool,
-    onClick: React.PropTypes.func,
-    onHover: React.PropTypes.func,
-    onHoverExit: React.PropTypes.func,
-    style: React.PropTypes.object,
+  childContextTypes: {
+    muiTheme: React.PropTypes.object,
   },
 
   getDefaultProps() {
@@ -26,9 +87,11 @@ const TableRowColumn = React.createClass({
     };
   },
 
-  //for passing default theme context to children
-  childContextTypes: {
-    muiTheme: React.PropTypes.object,
+  getInitialState() {
+    return {
+      muiTheme: this.context.muiTheme || getMuiTheme(),
+      hovered: false,
+    };
   },
 
   getChildContext() {
@@ -37,76 +100,10 @@ const TableRowColumn = React.createClass({
     };
   },
 
-  getInitialState() {
-    return {
-      muiTheme: this.context.muiTheme ? this.context.muiTheme : ThemeManager.getMuiTheme(DefaultRawTheme),
-      hovered: false,
-    };
-  },
-
-  //to update theme inside state whenever a new theme is passed down
-  //from the parent / owner using context
   componentWillReceiveProps(nextProps, nextContext) {
-    let newMuiTheme = nextContext.muiTheme ? nextContext.muiTheme : this.state.muiTheme;
-    this.setState({muiTheme: newMuiTheme});
-  },
-
-  getTheme() {
-    return this.state.muiTheme.tableRowColumn;
-  },
-
-  getStyles() {
-    let theme = this.getTheme();
-    let styles = {
-      root: {
-        paddingLeft: theme.spacing,
-        paddingRight: theme.spacing,
-        height: theme.height,
-        textAlign: 'left',
-        fontSize: 13,
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis',
-      },
-    };
-
-    if (React.Children.count(this.props.children) === 1 && !isNaN(this.props.children)) {
-      styles.textAlign = 'right';
-    }
-
-    return styles;
-  },
-
-  render() {
-    let {
-      className,
-      columnNumber,
-      hoverable,
-      onClick,
-      onHover,
-      onHoverExit,
-      style,
-      ...other,
-    } = this.props;
-    let styles = this.getStyles();
-    let handlers = {
-      onClick: this._onClick,
-      onMouseEnter: this._onMouseEnter,
-      onMouseLeave: this._onMouseLeave,
-    };
-    let classes = 'mui-table-row-column';
-    if (className) classes += ' ' + className;
-
-    return (
-      <td
-        key={this.props.key}
-        className={classes}
-        style={this.prepareStyles(styles.root, style)}
-        {...handlers}
-        {...other}>
-        {this.props.children}
-      </td>
-    );
+    this.setState({
+      muiTheme: nextContext.muiTheme || this.state.muiTheme,
+    });
   },
 
   _onClick(e) {
@@ -127,6 +124,44 @@ const TableRowColumn = React.createClass({
     }
   },
 
+  render() {
+    const {
+      children,
+      className,
+      columnNumber,
+      hoverable,
+      onClick,
+      onHover,
+      onHoverExit,
+      style,
+      ...other,
+    } = this.props;
+
+    const {
+      prepareStyles,
+    } = this.state.muiTheme;
+
+    const styles = getStyles(this.props, this.state);
+
+    const handlers = {
+      onClick: this._onClick,
+      onMouseEnter: this._onMouseEnter,
+      onMouseLeave: this._onMouseLeave,
+    };
+
+    return (
+      <td
+        key={this.props.key}
+        className={className}
+        style={prepareStyles(Object.assign(styles.root, style))}
+        {...handlers}
+        {...other}
+      >
+        {children}
+      </td>
+    );
+  },
+
 });
 
-module.exports = TableRowColumn;
+export default TableRowColumn;

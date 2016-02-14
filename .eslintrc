@@ -6,25 +6,29 @@ env:
   browser: true
   node: true
 
+extends: eslint:recommended
+
 rules:
   # Errors
   array-bracket-spacing: [2, never]
   arrow-spacing: 2
+  arrow-parens: 2
   block-spacing: [2, always]
-  brace-style: 0 # Wishlist, one day
+  brace-style: 2
   comma-dangle: [2, always-multiline]
+  comma-spacing: [2, {before: false, after: true}]
   comma-style: [2, last]
   computed-property-spacing: [2, never]
   consistent-this: [2, self]
-  consistent-return: 0
+  consistent-return: 0 # Wishlist, one day
   dot-notation: 2
   dot-location: [2, property]
   eqeqeq: [2, smart]
   eol-last: 2
-  indent: [0, 2, {SwitchCase: 1}] # Wishlist, one day
+  indent: [2, 2, {SwitchCase: 1}]
   jsx-quotes: [2, prefer-double]
-  key-spacing: 0 # Wishlist, one day
-  max-len: [0, 120, 4] # Wishlist, one day
+  key-spacing: 2
+  max-len: [2, 120, 4]
   new-cap: [0, {capIsNew: true, newIsCap: true}] # Wishlist, one day
   no-unused-expressions: 2
   no-unused-vars: 2
@@ -40,11 +44,14 @@ rules:
   no-extra-semi: 2
   no-extra-boolean-cast: 2
   no-trailing-spaces: 2
+  no-unneeded-ternary: 2
   no-unreachable: 2
   no-var: 2
   object-curly-spacing: [2, never]
+  one-var: [2, never]
   prefer-arrow-callback: 0 # Wishlist, one day
-  prefer-const: 0 # Wishlist, one day
+  prefer-const: 2
+  prefer-template: 2
   quotes: [2, single, avoid-escape]
   semi: [2, always]
   space-after-keywords: [2, always]
@@ -53,7 +60,7 @@ rules:
   space-before-keywords: [2, always]
   space-infix-ops: 2
   space-return-throw-case: 2
-  space-unary-ops: [0, { words: true, nonwords: false }] # Wishlist, one day
+  space-unary-ops: [2, { words: true, nonwords: false }]
   yoda: 2
 
   # Disabled
@@ -62,13 +69,16 @@ rules:
   # React
   react/display-name: [2, {acceptTranspilerName: true}]
   react/jsx-boolean-value: [2, always]
+  react/jsx-closing-bracket-location: 2
   react/jsx-curly-spacing: 2
-  react/jsx-indent-props: [0, 2] # Wishlist, one day
-  react/jsx-max-props-per-line: [2, {maximum: 4}]
+  react/jsx-equals-spacing: 2
+  react/jsx-handler-names: 0 # Wishlist, one day
+  react/jsx-indent-props: [2, 2]
+  react/jsx-max-props-per-line: [2, {maximum: 3}]
   react/jsx-no-duplicate-props: 2
-  react/jsx-no-literals: 0 # Wishlist, one day
   react/jsx-no-undef: 2
-  react/jsx-sort-prop-types: 0 # Wishlist, one day
+  react/jsx-pascal-case: 2
+  react/jsx-sort-prop-types: 2
   react/jsx-uses-react: 2
   react/jsx-uses-vars: 2
   react/no-danger: 2
@@ -77,16 +87,20 @@ rules:
   react/no-direct-mutation-state: 2
   react/no-multi-comp: 0 # Wishlist, one day
   react/no-unknown-property: 2
-  react/prop-types: 0 # Wishlist, one day
+  react/no-is-mounted: 0 # Wishlist, one day
+  react/prefer-arrow-callback: 0 # Wishlist, one day
+  react/prefer-es6-class: 0 # Wishlist, one day
+  react/prop-types: 2
   react/react-in-jsx-scope: 2
   react/require-extension: 2
   react/self-closing-comp: 2
-  react/sort-comp: 0 # Wishlist, one day
-  react/wrap-multilines: 0 # Wishlist, one day
+  react/sort-comp: 2
+  react/wrap-multilines: 2
+  react/jsx-indent: [2, 2]
 
-  # Disabled
+  # React Disabled
   react/jsx-no-bind: 0
-  react/jsx-closing-bracket-location: 0
+  react/jsx-no-literals: 0
   react/jsx-sort-props: 0
   react/no-set-state: 0
 
@@ -97,3 +111,4 @@ plugins:
 
 ecmaFeatures:
   jsx: true
+  modules: true

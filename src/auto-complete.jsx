@@ -1,63 +1,163 @@
-const React = require('react');
-const ReactTransitionGroup = require('react-addons-transition-group');
-const StylePropable = require('./mixins/style-propable');
-const ClickAwayable = require('./mixins/click-awayable');
-const KeyCode = require('./utils/key-code');
-const TextField = require('./text-field');
-const Menu = require('./menus/menu');
-const MenuItem = require('./menus/menu-item');
-const MenuDivider = require('./menus/menu-divider');
+import React from 'react';
+import ReactDOM from 'react-dom';
+import StylePropable from './mixins/style-propable';
+import KeyCode from './utils/key-code';
+import TextField from './text-field';
+import Menu from './menus/menu';
+import MenuItem from './menus/menu-item';
+import Divider from './divider';
+import Popover from './popover/popover';
+import PropTypes from './utils/prop-types';
+import getMuiTheme from './styles/getMuiTheme';
+import warning from 'warning';
 
 const AutoComplete = React.createClass({
 
-  mixins: [
-    StylePropable,
-    ClickAwayable,
-  ],
+  propTypes: {
+    /**
+     * Location of the anchor for the auto complete.
+     */
+    anchorOrigin: PropTypes.origin,
+
+    /**
+     * If true, the auto complete is animated as it is toggled.
+     */
+    animated: React.PropTypes.bool,
+
+    /**
+     * Array of strings or nodes used to populate the list.
+     */
+    dataSource: React.PropTypes.array.isRequired,
+
+    /**
+     * Disables focus ripple when true.
+     */
+    disableFocusRipple: React.PropTypes.bool,
+
+    /**
+     * Override style prop for error.
+     */
+    errorStyle: React.PropTypes.object,
+
+    /**
+     * The error content to display.
+     */
+    errorText: React.PropTypes.string,
+
+    /**
+     * Function used to filter the auto complete.
+     */
+    filter: React.PropTypes.func,
+
+    /**
+     * The content to use for adding floating label element.
+     */
+    floatingLabelText: React.PropTypes.string,
+
+    /**
+     * If true, the field receives the property `width: 100%`.
+     */
+    fullWidth: React.PropTypes.bool,
+
+    /**
+     * The hint content to display.
+     */
+    hintText: React.PropTypes.string,
+
+    /**
+     * Override style for list.
+     */
+    listStyle: React.PropTypes.object,
+
+    /**
+     * The max number of search results to be shown.
+     * By default it shows all the items which matches filter.
+     */
+    maxSearchResults: React.PropTypes.number,
+
+    /**
+     * Delay for closing time of the menu.
+     */
+    menuCloseDelay: React.PropTypes.number,
+
+    /**
+     * Props to be passed to menu.
+     */
+    menuProps: React.PropTypes.object,
+
+    /**
+     * Override style for menu.
+     */
+    menuStyle: React.PropTypes.object,
+
+    /**
+     * Gets called when list item is clicked or pressed enter.
+     */
+    onNewRequest: React.PropTypes.func,
+
+    /**
+     * Gets called each time the user updates the text field.
+     */
+    onUpdateInput: React.PropTypes.func,
+
+    /**
+     * Auto complete menu is open if true.
+     */
+    open: React.PropTypes.bool,
+
+    /**
+     * Text being input to auto complete.
+     */
+    searchText: React.PropTypes.string,
+
+    /**
+     * Override the inline-styles of the root element.
+     */
+    style: React.PropTypes.object,
+
+    /**
+     * Origin for location of target.
+     */
+    targetOrigin: PropTypes.origin,
+
+    /**
+     * If true, will update when focus event triggers.
+     */
+    triggerUpdateOnFocus: React.PropTypes.bool,
+  },
 
   contextTypes: {
     muiTheme: React.PropTypes.object,
   },
 
-  propTypes: {
-    animated: React.PropTypes.bool,
-    errorText: React.PropTypes.string,
-    floatingLabelText: React.PropTypes.string,
-    errorStyle: React.PropTypes.object,
-    hintText: React.PropTypes.string,
-    searchText: React.PropTypes.string,
-    dataSource: React.PropTypes.oneOfType([
-      React.PropTypes.array,
-      React.PropTypes.object,
-    ]),
-    updateWhenFocused: React.PropTypes.bool,
-    showAllItems: React.PropTypes.bool,
-    menuStyle: React.PropTypes.object,
-    listStyle: React.PropTypes.object,
-    menuProps: React.PropTypes.object,
-    menuCloseDelay: React.PropTypes.number,
-    onUpdateInput: React.PropTypes.func,
-    onNewRequest: React.PropTypes.func,
-    filter: React.PropTypes.func,
-    disableFocusRipple: React.PropTypes.bool,
-    fullWidth: React.PropTypes.bool,
-    touchTapCloseDelay: React.PropTypes.number,
-    open: React.PropTypes.bool,
+  childContextTypes: {
+    muiTheme: React.PropTypes.object,
   },
+
+  mixins: [
+    StylePropable,
+  ],
 
   getDefaultProps() {
     return {
+      anchorOrigin: {
+        vertical: 'bottom',
+        horizontal: 'left',
+      },
+      targetOrigin: {
+        vertical: 'top',
+        horizontal: 'left',
+      },
       animated: true,
       fullWidth: false,
       open: false,
-      showAllItems: false,
       searchText: '',
-      menuCloseDelay: 100,
+      menuCloseDelay: 200,
       disableFocusRipple: true,
-      updateWhenFocused: false,
       onUpdateInput: () => {},
       onNewRequest: () => {},
-      filter: (searchText, key) => key.includes(searchText),
+      filter: (searchText, key) => searchText !== '' && key.includes(searchText),
+      triggerUpdateOnFocus: false,
     };
   },
 
@@ -65,8 +165,22 @@ const AutoComplete = React.createClass({
     return {
       searchText: this.props.searchText,
       open: this.props.open,
+      anchorEl: null,
+      muiTheme: this.context.muiTheme || getMuiTheme(),
     };
   },
+
+  getChildContext() {
+    return {
+      muiTheme: this.state.muiTheme,
+    };
+  },
+
+  componentWillMount() {
+    this.focusOnInput = false;
+    this.requestsList = [];
+  },
+
   componentWillReceiveProps: function(nextProps) {
     if (this.props.searchText !== nextProps.searchText) {
       this.setState({
@@ -74,18 +188,132 @@ const AutoComplete = React.createClass({
       });
     }
   },
-  componentWillMount() {
-    this.focusOnInput = false;
-    this.requestsList = [];
+
+  componentWillUnmount() {
+    clearTimeout(this.timerCloseId);
   },
 
   componentClickAway() {
-    this.setState({open:false});
+    this.close();
     this.focusOnInput = false;
   },
 
+  open() {
+    this.setState({
+      open: true,
+      anchorEl: ReactDOM.findDOMNode(this.refs.searchTextField),
+    });
+  },
+
+  close() {
+    this.setState({
+      open: false,
+      anchorEl: null,
+    });
+  },
+
+  setValue(textValue) {
+    warning(false, 'setValue() is deprecated, use the searchText property.');
+
+    this.setState({
+      searchText: textValue,
+    });
+  },
+
+  getValue() {
+    warning(false, 'getValue() is deprecated.');
+
+    return this.state.searchText;
+  },
+
+  updateRequests(searchText) {
+    this.setState({
+      searchText: searchText,
+      open: true,
+      anchorEl: ReactDOM.findDOMNode(this.refs.searchTextField),
+    });
+
+    this.focusOnInput = true;
+
+    this.props.onUpdateInput(searchText, this.props.dataSource);
+  },
+
+  handleItemTouchTap(event, child) {
+    const dataSource = this.props.dataSource;
+    let chosenRequest;
+    let index;
+    let searchText;
+
+    if (typeof dataSource[0] === 'string') {
+      chosenRequest = this.requestsList[parseInt(child.key, 10)];
+      index = dataSource.indexOf(chosenRequest);
+      searchText = dataSource[index];
+    } else {
+      chosenRequest = child.key;
+      index = dataSource.indexOf(
+        dataSource.filter((item) => chosenRequest === item.text)[0]);
+      searchText = chosenRequest;
+    }
+
+    this.setState({
+      searchText: searchText,
+    });
+
+    this.props.onNewRequest(chosenRequest, index, dataSource);
+
+    this.timerCloseId = setTimeout(() => {
+      this.close();
+    }, this.props.menuCloseDelay);
+  },
+
+  handleEnterKeyDown() {
+    this.props.onNewRequest(this.state.searchText);
+
+    this.timerCloseId = setTimeout(() => {
+      this.close();
+    }, this.props.menuCloseDelay);
+  },
+
+  handleKeyDown(event) {
+    switch (event.keyCode) {
+      case KeyCode.ESC:
+        this.close();
+        break;
+
+      case KeyCode.DOWN:
+        if (this.focusOnInput && this.state.open) {
+          event.preventDefault();
+          this.focusOnInput = false;
+          this.open();
+        }
+        break;
+
+      default:
+        break;
+    }
+  },
+
+  handleChange(event) {
+    const value = event.target.value;
+    this.updateRequests(value);
+  },
+
+  handleBlur() {
+    if (this.focusOnInput && this.state.open) {
+      this.refs.searchTextField.focus();
+    }
+  },
+
+  handleFocus() {
+    if (!this.state.open && (this.props.triggerUpdateOnFocus || this.requestsList > 0)) {
+      this.updateRequests(this.state.searchText);
+    }
+    this.focusOnInput = true;
+  },
+
   render() {
-    let {
+    const {
+      anchorOrigin,
       animated,
       style,
       errorStyle,
@@ -95,11 +323,20 @@ const AutoComplete = React.createClass({
       menuStyle,
       menuProps,
       listStyle,
-      showAllItems,
+      targetOrigin,
+      disableFocusRipple,
+      triggerUpdateOnFocus,
+      maxSearchResults,
       ...other,
     } = this.props;
 
-    let styles = {
+    const {
+      open,
+      anchorEl,
+      searchText,
+    } = this.state;
+
+    const styles = {
       root: {
         display: 'inline-block',
         position: 'relative',
@@ -110,8 +347,6 @@ const AutoComplete = React.createClass({
       error: {
       },
       menu: {
-        top: this.props.floatingLabelText ? 64 : 40,
-        left: 0,
         width: '100%',
       },
       list: {
@@ -120,79 +355,63 @@ const AutoComplete = React.createClass({
       },
     };
 
-    let textFieldProps = {
-      style: this.mergeAndPrefix(styles.input, style),
-      floatingLabelText: floatingLabelText,
-      hintText: (!hintText && !floatingLabelText) ? '' : hintText,
-      fullWidth: true,
-      multiLine: false,
-      errorStyle: this.mergeAndPrefix(styles.error, errorStyle),
-    };
+    const requestsList = [];
 
-    let mergedRootStyles = this.mergeAndPrefix(styles.root, style);
-    let mergedMenuStyles = this.mergeStyles(styles.menu, menuStyle);
-
-
-
-    if (Array.isArray(this.props.dataSource)) {
-
-      if (this.props.showAllItems && this.state.searchText === '') {
-        this.requestsList = this.props.dataSource;
-      }
-      else {
-        this.requestsList = this.props.dataSource.filter((s) => this.props.filter(this.state.searchText, s));
-      }
-
-    }
-    else {
-      let list = [];
-      if (this.props.showAllItems && this.state.searchText === '') {
-        for (let k in this.props.dataSource) {
-          list.push(this.props.dataSource[k]);
-        }
-      }
-      else {
-        for (let k in this.props.dataSource) {
-          if (this.props.filter(this.state.searchText, k, this.props.dataSource[k])) {
-            list.push(this.props.dataSource[k]);
+    this.props.dataSource.every((item) => {
+      switch (typeof item) {
+        case 'string':
+          if (this.props.filter(searchText, item, item)) {
+            requestsList.push(item);
           }
-        }
+          break;
+        case 'object':
+          if (typeof item.text === 'string') {
+            if (this.props.filter(searchText, item.text, item)) {
+              requestsList.push(item);
+            }
+          }
+          break;
       }
-      this.requestsList = list;
-    }
+      return !(maxSearchResults && maxSearchResults > 0 && requestsList.length === maxSearchResults);
+    });
 
+    this.requestsList = requestsList;
 
-    let requestsList = this.requestsList;
-
-    let menu = this.state.open && (this.state.searchText !== '' || showAllItems)
-               && requestsList && requestsList.length > 0 ? (
+    const menu = open && requestsList.length > 0 ? (
       <Menu
         {...menuProps}
         ref="menu"
         key="dropDownMenu"
-        animated={animated}
         autoWidth={false}
+        onEscKeyDown={this.close}
         initiallyKeyboardFocused={false}
-        onEscKeyDown={() => this.setState({open:false})}
-        onItemTouchTap={this._handleItemTouchTap}
-        listStyle={this.mergeAndPrefix(styles.list, listStyle)}
-        openDirection="bottom-left"
-        style={mergedMenuStyles}>
+        onItemTouchTap={this.handleItemTouchTap}
+        listStyle={this.mergeStyles(styles.list, listStyle)}
+        style={this.mergeStyles(styles.menu, menuStyle)}
+      >
         {
           requestsList.map((request, index) => {
             switch (typeof request) {
               case 'string':
-                return (<MenuItem
-                          disableFocusRipple={this.props.disableFocusRipple}
-                          innerDivStyle={{overflow:'hidden'}}
-                          key={index}
-                          value={request}
-                          primaryText={request}
-                          />);
+                return (
+                  <MenuItem
+                    disableFocusRipple={disableFocusRipple}
+                    innerDivStyle={{overflow: 'hidden'}}
+                    key={index}
+                    value={request}
+                    primaryText={request}
+                  />
+                );
               case 'object':
+                if (typeof request.text === 'string') {
+                  return React.cloneElement(request.value, {
+                    key: request.text,
+                    disableFocusRipple: disableFocusRipple,
+                  });
+                }
                 return React.cloneElement(request, {
                   key: index,
-                  disableFocusRipple: this.props.disableFocusRipple,
+                  disableFocusRipple: disableFocusRipple,
                 });
               default:
                 return null;
@@ -202,107 +421,107 @@ const AutoComplete = React.createClass({
       </Menu>
     ) : null;
 
+    let popoverStyle;
+    if (anchorEl && fullWidth) {
+      popoverStyle = {width: anchorEl.clientWidth};
+    }
+
     return (
-      <div style={mergedRootStyles}
-           onKeyDown={this._handleKeyDown}>
+      <div
+        style={this.prepareStyles(this.mergeStyles(styles.root, style))}
+        onKeyDown={this.handleKeyDown}
+      >
         <div
           style={{
-            width:'100%',
-          }}>
+            width: '100%',
+          }}
+        >
           <TextField
             {...other}
             ref="searchTextField"
-            value={this.state.searchText}
-            onEnterKeyDown={() => {
-              setTimeout(() => {
-                this.setState({open:false});
-              }, this.props.touchTapCloseDelay);
-              this.props.onNewRequest(this.state.searchText);
-            }}
-            onChange={(e) => {
-              let searchText = e.target.value;
-              this._updateRequests(searchText);
-            }}
-            onBlur={() => {
-              if (this.focusOnInput && this.state.open)
-                this.refs.searchTextField.focus();
-            }}
-            onFocus={() => {
-              if (!this.state.open && ( showAllItems ||
-                  this.props.updateWhenFocused || this.state.searchText !== '')) {
-                this._updateRequests(this.state.searchText);
-              }
-              this.focusOnInput = true;
-            }}
-
-            {...textFieldProps} />
+            value={searchText}
+            onEnterKeyDown={this.handleEnterKeyDown}
+            onChange={this.handleChange}
+            onBlur={this.handleBlur}
+            onFocus={this.handleFocus}
+            style={styles.input}
+            floatingLabelText={floatingLabelText}
+            hintText={(!hintText && !floatingLabelText) ? '' : hintText}
+            fullWidth={true}
+            multiLine={false}
+            errorStyle={this.mergeStyles(styles.error, errorStyle)}
+          />
         </div>
-          <ReactTransitionGroup>{menu}</ReactTransitionGroup>
+        <Popover
+          style={popoverStyle}
+          anchorOrigin={anchorOrigin}
+          targetOrigin={targetOrigin}
+          open={open}
+          anchorEl={anchorEl}
+          useLayerForClickAway={false}
+          onRequestClose={this.close}
+          animated={animated}
+        >
+          {menu}
+        </Popover>
       </div>
     );
   },
 
-  setValue(textValue) {
-    this.setState({
-      searchText: textValue,
-    });
-  },
-
-  getValue() {
-    return this.state.searchText;
-  },
-
-  _updateRequests(searchText) {
-
-    this.setState({
-      searchText:searchText,
-      open: true,
-    });
-
-    this.focusOnInput = true;
-
-    this.props.onUpdateInput(searchText, this.props.dataSource);
-
-  },
-
-  _handleItemTouchTap(e, child) {
-    setTimeout(() => {
-      this.setState({open:false});
-    }, this.props.touchTapCloseDelay);
-
-    let dataSource = this.props.dataSource;
-    let chosenRequest = this.requestsList[parseInt(child.key, 10)];
-
-    let index = Array.isArray(dataSource) ? dataSource.indexOf(chosenRequest) :
-                  Object.keys(dataSource).filter((key) => chosenRequest === dataSource[key])[0];
-
-    this.setState({searchText: Array.isArray(dataSource) ? dataSource[index] : index});
-
-    this.props.onNewRequest(chosenRequest, index, dataSource);
-
-  },
-
-  _handleKeyDown(e) {
-    switch (e.keyCode) {
-      case KeyCode.ESC:
-        this.setState({open:false});
-        break;
-      case KeyCode.DOWN:
-        if (this.focusOnInput && this.state.open) {
-          e.preventDefault();
-          this.focusOnInput = false;
-          this.setState({open:true});
-        }
-        break;
-      default:
-        break;
-    }
-  },
-
-
 });
 
-AutoComplete.Item = MenuItem;
-AutoComplete.Divider = MenuDivider;
+AutoComplete.levenshteinDistance = (searchText, key) => {
+  const current = [];
+  let prev;
+  let value;
 
-module.exports = AutoComplete;
+  for (let i = 0; i <= key.length; i++) {
+    for (let j = 0; j <= searchText.length; j++) {
+      if (i && j) {
+        if (searchText.charAt(j - 1) === key.charAt(i - 1)) value = prev;
+        else value = Math.min(current[j], current[j - 1], prev) + 1;
+      } else {
+        value = i + j;
+      }
+      prev = current[j];
+      current[j] = value;
+    }
+  }
+  return current.pop();
+};
+
+AutoComplete.noFilter = () => true;
+
+AutoComplete.defaultFilter = AutoComplete.caseSensitiveFilter = (searchText, key) => {
+  return searchText !== '' && key.includes(searchText);
+};
+
+AutoComplete.caseInsensitiveFilter = (searchText, key) => {
+  return key.toLowerCase().includes(searchText.toLowerCase());
+};
+
+AutoComplete.levenshteinDistanceFilter = (distanceLessThan) => {
+  if (distanceLessThan === undefined) {
+    return AutoComplete.levenshteinDistance;
+  } else if (typeof distanceLessThan !== 'number') {
+    throw 'Error: AutoComplete.levenshteinDistanceFilter is a filter generator, not a filter!';
+  }
+
+  return (s, k) => AutoComplete.levenshteinDistance(s, k) < distanceLessThan;
+};
+
+AutoComplete.fuzzyFilter = (searchText, key) => {
+  if (searchText.length === 0) {
+    return false;
+  }
+
+  const subMatchKey = key.substring(0, searchText.length);
+  const distance = AutoComplete.levenshteinDistance(searchText.toLowerCase(), subMatchKey.toLowerCase());
+
+  return searchText.length > 3 ? distance < 2 : distance === 0;
+};
+
+AutoComplete.Item = MenuItem;
+AutoComplete.Divider = Divider;
+
+export default AutoComplete;
